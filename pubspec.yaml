@@ -1,0 +1,10 @@
+name: img_to_pdf
+description: A simple command-line application.
+
+environment:
+  sdk: ">=3.0.0-0"
+
+dependencies:
+  mime:
+  path:
+  pdf:
