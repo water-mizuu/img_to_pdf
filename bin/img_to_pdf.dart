@@ -24,15 +24,6 @@ extension ListGroupExtension<E> on List<E> {
   }
 }
 
-extension IterableEnumerateExtension<E> on Iterable<E> {
-  Iterable<(int, E)> entries() sync* {
-    int i = 0;
-    for (E item in this) {
-      yield (i, item);
-    }
-  }
-}
-
 extension StreamTypeExtension<E> on Stream<E> {
   Stream<R> whereType<R>() async* {
     await for (E item in this) {
@@ -121,9 +112,9 @@ void main() async {
       .map((Directory dir) => dir.path)
       .toList();
 
-  for (var batch in bookDirectories.group(BookBatch.max).entries()) {
-    print("Batch ${batch.$0} has been started.");
-    await BookBatch(batch.$1).createBooks();
-    print("Batch ${batch.$0} has been finished.");
+  for (var (index, bookPaths) in bookDirectories.group(BookBatch.max).indexed) {
+    print("Batch $index has been started.");
+    await BookBatch(bookPaths).createBooks();
+    print("Batch $index has been finished.");
   }
 }
