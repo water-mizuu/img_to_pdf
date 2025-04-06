@@ -1,13 +1,7 @@
 analyzer:
   enable-experiment:
-    - records
     - variance
     - const-functions
-    - value-class
-    - extension-types
-    - inference-update-2
-    - unnamed-libraries
-    - patterns
   language:
     strict-inference: true
     strict-raw-types: true

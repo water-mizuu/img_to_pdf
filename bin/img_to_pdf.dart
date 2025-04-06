@@ -10,8 +10,8 @@ import "package:path/path.dart" as path;
 import "package:pdf/pdf.dart";
 import "package:pdf/widgets.dart";
 
-const String inputFolder = r"assets\input\";
-const String outputFolder = r"assets\output\";
+const String inputFolder = "assets/input/";
+const String outputFolder = "assets/output/";
 
 extension ListGroupExtension<E> on List<E> {
   Iterable<List<E>> group(int length) sync* {
@@ -35,7 +35,7 @@ extension StreamTypeExtension<E> on Stream<E> {
 }
 
 class BookBatch {
-  static const int max = 8;
+  static const int max = 2;
 
   final List<String> bookPaths;
 
@@ -71,17 +71,18 @@ class BookBatch {
 
     Document document = Document();
     Stream<FileSystemEntity> children = Directory(inputPath).list();
+    List<File> files = await children //
+        .whereType<File>()
+        .where(entityIsImage)
+        .toList();
+    files.sort((a, b) => a.path.compareTo(b.path));
 
-    await for (File child in children.where(entityIsImage).whereType<File>()) {
+    for (File child in files) {
       Uint8List rawImageData = child.readAsBytesSync();
       MemoryImage imageData = MemoryImage(rawImageData);
 
-      double? width = imageData.width?.toDouble();
-      double? height = imageData.height?.toDouble();
-
-      if (width == null || height == null) {
-        continue;
-      }
+      double width = imageData.width!.toDouble();
+      double height = imageData.height!.toDouble();
 
       document.addPage(
         Page(
@@ -100,9 +101,16 @@ bool entityIsImage(FileSystemEntity entity) {
   if (entity is! File) {
     return false;
   }
-  String? mimeType = mime.lookupMimeType(entity.path);
 
-  return mimeType != null && mimeType.split("/").first == "image";
+  try {
+    String? mimeType = mime.lookupMimeType(entity.path);
+
+    return mimeType != null && mimeType.split("/").first == "image";
+  } on Object {
+    print(entity.path);
+
+    return false;
+  }
 }
 
 void main() async {
@@ -112,7 +120,10 @@ void main() async {
       .map((Directory dir) => dir.path)
       .toList();
 
-  for (var (index, bookPaths) in bookDirectories.group(BookBatch.max).indexed) {
+  var batches = bookDirectories.group(BookBatch.max).toList();
+
+  print("Running ${batches.length} batches of ${BookBatch.max} books each.");
+  for (var (index, bookPaths) in batches.indexed) {
     print("Batch $index has been started.");
     await BookBatch(bookPaths).createBooks();
     print("Batch $index has been finished.");
